@@ -52,13 +52,21 @@ function startRecording() {
 
 
 function stopRecording() {
-    if (mediaRec) {
-        mediaRec.stopRecord();
-        isRecording = false;
-        updateUI(false);
-        stopVisualization();
+    if (mediaRec && isRecording) {
+        try {
+            mediaRec.stopRecord(); // Stop recording
+            console.log("Recording stopped");
+            isRecording = false;
+            updateUI(false); // Update the UI to reflect stopped state
+            stopVisualization(); // Stop visualizer animation
+        } catch (error) {
+            console.error("Error stopping recording: " + error.message);
+        }
+    } else {
+        console.error("No recording in progress to stop.");
     }
 }
+
 
 function playRecording() {
     const path = cordova.file.externalDataDirectory + audioFile;
