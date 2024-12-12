@@ -6,6 +6,30 @@
         Apache Cordova Team
     </author>
     <content src="index.html" />
+
+    <!-- Allow intents for external URLs -->
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
+
+    <!-- Required Permissions for Recording and File Access -->
+    <platform name="android">
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.RECORD_AUDIO" />
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+        </config-file>
+    </platform>
+
+    <!-- Preferences -->
+    <preference name="permissions" value="none" />
+    <preference name="Orientation" value="portrait" />
+    <preference name="Fullscreen" value="true" />
+    <preference name="android-minSdkVersion" value="21" />
+    <preference name="android-targetSdkVersion" value="34" />
+
+    <!-- Plugins -->
+    <plugin name="cordova-plugin-media" />
+    <plugin name="cordova-plugin-file" />
+    <plugin name="cordova.plugins.diagnostic" />
+
 </widget>

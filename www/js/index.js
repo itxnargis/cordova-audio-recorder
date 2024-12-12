@@ -25,15 +25,29 @@ function toggleRecording() {
 }
 
 function startRecording() {
-    const path = cordova.file.externalDataDirectory + audioFile;
-    mediaRec = new Media(path,
-        () => console.log("Recording successful"),
-        (err) => console.error("Recording failed: " + err.code)
-    );
-    mediaRec.startRecord();
-    isRecording = true;
-    updateUI(true);
-    startVisualization();
+    cordova.plugins.diagnostic.requestRuntimePermissions(function(statuses) {
+        if (statuses["android.permission.RECORD_AUDIO"] === cordova.plugins.diagnostic.permissionStatus.GRANTED &&
+            statuses["android.permission.WRITE_EXTERNAL_STORAGE"] === cordova.plugins.diagnostic.permissionStatus.GRANTED) {
+
+            const path = cordova.file.externalDataDirectory + audioFile;
+            mediaRec = new Media(path,
+                () => console.log("Recording successful"),
+                (err) => console.error("Recording failed: " + err.code)
+            );
+            mediaRec.startRecord();
+            isRecording = true;
+            updateUI(true);
+            startVisualization();
+
+        } else {
+            console.error("Permissions not granted for recording.");
+        }
+    }, function(error) {
+        console.error("Permission request error: " + error);
+    }, [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+    ]);
 }
 
 function stopRecording() {
@@ -98,4 +112,3 @@ function animateVisualizer() {
 function stopVisualization() {
     visualizer.innerHTML = '';
 }
-
