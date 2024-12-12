@@ -3,9 +3,11 @@ document.addEventListener('deviceready', onDeviceReady, false);
 let mediaRec;
 const audioFile = 'myrecording.mp3';
 let isRecording = false;
+let isPlaying = false;
 let visualizer;
 
 function onDeviceReady() {
+    console.log('Device is ready');
     const recordButton = document.getElementById('recordButton');
     const stopButton = document.getElementById('stopButton');
     const playButton = document.getElementById('playButton');
@@ -25,40 +27,50 @@ function toggleRecording() {
 }
 
 function startRecording() {
-    if (!Media) {
+    if (!window.Media) {
         console.error("Media plugin is not available.");
         return;
     }
 
-    const audioFile = "myRecording.mp3"; // Example file name
     const path = cordova.file.externalDataDirectory + audioFile;
+    console.log('Recording path:', path);
 
     try {
-        const mediaRec = new Media(
+        mediaRec = new Media(
             path,
-            () => console.log("Recording successful"),
-            (err) => console.error("Recording failed: " + err.code)
+            () => {
+                console.log("Recording successful");
+                updateUI(false);
+            },
+            (err) => {
+                console.error("Recording failed: ", err);
+                updateUI(false);
+            }
         );
 
         mediaRec.startRecord();
         isRecording = true;
         updateUI(true);
         startVisualization();
+        console.log("Recording started");
 
     } catch (error) {
         console.error("Error initializing recording: " + error.message);
+        updateUI(false);
     }
 }
-
 
 function stopRecording() {
     if (mediaRec && isRecording) {
         try {
-            mediaRec.stopRecord(); // Stop recording
+            mediaRec.stopRecord();
             console.log("Recording stopped");
             isRecording = false;
-            updateUI(false); // Update the UI to reflect stopped state
-            stopVisualization(); // Stop visualizer animation
+            updateUI(false);
+            stopVisualization();
+
+            // Release the media resource
+            mediaRec.release();
         } catch (error) {
             console.error("Error stopping recording: " + error.message);
         }
@@ -67,18 +79,39 @@ function stopRecording() {
     }
 }
 
-
 function playRecording() {
+    if (isPlaying) {
+        console.log("Already playing");
+        return;
+    }
+
     const path = cordova.file.externalDataDirectory + audioFile;
-    const media = new Media(path,
-        () => {
-            console.log("Playback successful");
-            updateUI(false);
-        },
-        (err) => console.error("Playback failed: " + err.code)
-    );
-    media.play();
-    updateUI(true, true);
+    console.log('Playback path:', path);
+
+    try {
+        const media = new Media(
+            path,
+            () => {
+                console.log("Playback finished");
+                isPlaying = false;
+                updateUI(false);
+            },
+            (err) => {
+                console.error("Playback failed: ", err);
+                isPlaying = false;
+                updateUI(false);
+            }
+        );
+
+        media.play();
+        isPlaying = true;
+        updateUI(false, true);
+        console.log("Playback started");
+
+    } catch (error) {
+        console.error("Error playing recording: " + error.message);
+        updateUI(false);
+    }
 }
 
 function updateUI(recording, playing = false) {
@@ -88,7 +121,7 @@ function updateUI(recording, playing = false) {
 
     recordButton.disabled = recording || playing;
     stopButton.disabled = !recording && !playing;
-    playButton.disabled = recording || playing;
+    playButton.disabled = recording || isPlaying;
 
     recordButton.querySelector('.text').textContent = recording ? 'Recording...' : 'Record';
     playButton.querySelector('.text').textContent = playing ? 'Playing...' : 'Play';
