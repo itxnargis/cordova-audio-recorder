@@ -1,156 +1,101 @@
 document.addEventListener('deviceready', onDeviceReady, false);
 
 let mediaRec;
-const audioFile = 'myrecording.mp3';
+let recordingPath;
 let isRecording = false;
-let isPlaying = false;
-let visualizer;
+let startTime;
+let timerInterval;
+let visualizerInterval;
 
 function onDeviceReady() {
     console.log('Device is ready');
+
     const recordButton = document.getElementById('recordButton');
     const stopButton = document.getElementById('stopButton');
     const playButton = document.getElementById('playButton');
-    visualizer = document.getElementById('visualizer');
+    const statusDiv = document.getElementById('status');
+    const timerDiv = document.getElementById('timer');
+    const visualizer = document.getElementById('visualizer');
 
-    recordButton.addEventListener('click', toggleRecording);
+    recordButton.addEventListener('click', startRecording);
     stopButton.addEventListener('click', stopRecording);
     playButton.addEventListener('click', playRecording);
-}
 
-function toggleRecording() {
-    if (!isRecording) {
-        startRecording();
-    } else {
-        stopRecording();
-    }
-}
-
-function startRecording() {
-    if (!window.Media) {
-        console.error("Media plugin is not available.");
-        return;
-    }
-
-    const path = cordova.file.externalDataDirectory + audioFile;
-    console.log('Recording path:', path);
-
-    try {
-        mediaRec = new Media(
-            path,
-            () => {
-                console.log("Recording successful");
-                updateUI(false);
-            },
-            (err) => {
-                console.error("Recording failed: ", err);
-                updateUI(false);
-            }
+    function startRecording() {
+        recordingPath = cordova.file.externalDataDirectory + 'recording.mp3';
+        mediaRec = new Media(recordingPath,
+            () => console.log('Recording successful'),
+            (err) => console.error('Recording failed: ', err)
         );
 
         mediaRec.startRecord();
         isRecording = true;
-        updateUI(true);
-        startVisualization();
-        console.log("Recording started");
+        recordButton.disabled = true;
+        stopButton.disabled = false;
+        playButton.disabled = true;
+        statusDiv.textContent = 'Recording...';
 
-    } catch (error) {
-        console.error("Error initializing recording: " + error.message);
-        updateUI(false);
+        startTime = Date.now();
+        updateTimer();
+        timerInterval = setInterval(updateTimer, 1000);
+        visualizerInterval = setInterval(updateVisualizer, 100);
     }
-}
 
-function stopRecording() {
-    if (mediaRec && isRecording) {
-        try {
+    function stopRecording() {
+        if (isRecording) {
             mediaRec.stopRecord();
-            console.log("Recording stopped");
             isRecording = false;
-            updateUI(false);
-            stopVisualization();
-
-            // Release the media resource
+            recordButton.disabled = false;
+            stopButton.disabled = true;
+            playButton.disabled = false;
+            statusDiv.textContent = 'Recording stopped';
             mediaRec.release();
-        } catch (error) {
-            console.error("Error stopping recording: " + error.message);
+            mediaRec = null;
+
+            clearInterval(timerInterval);
+            clearInterval(visualizerInterval);
+            visualizer.innerHTML = ''; // Clear the visualizer
         }
-    } else {
-        console.error("No recording in progress to stop.");
-    }
-}
-
-function playRecording() {
-    if (isPlaying) {
-        console.log("Already playing");
-        return;
     }
 
-    const path = cordova.file.externalDataDirectory + audioFile;
-    console.log('Playback path:', path);
+    function playRecording() {
+        if (recordingPath) {
+            const playback = new Media(recordingPath,
+                () => {
+                    statusDiv.textContent = 'Playback finished';
+                    playButton.disabled = false;
+                    recordButton.disabled = false; // Re-enable record button
+                },
+                (err) => console.error('Playback failed: ', err)
+            );
 
-    try {
-        const media = new Media(
-            path,
-            () => {
-                console.log("Playback finished");
-                isPlaying = false;
-                updateUI(false);
-            },
-            (err) => {
-                console.error("Playback failed: ", err);
-                isPlaying = false;
-                updateUI(false);
-            }
-        );
-
-        media.play();
-        isPlaying = true;
-        updateUI(false, true);
-        console.log("Playback started");
-
-    } catch (error) {
-        console.error("Error playing recording: " + error.message);
-        updateUI(false);
+            playback.play();
+            statusDiv.textContent = 'Playing...';
+            playButton.disabled = true;
+            recordButton.disabled = true; // Disable record button while playing
+        } else {
+            statusDiv.textContent = 'No recording available';
+        }
     }
-}
 
-function updateUI(recording, playing = false) {
-    const recordButton = document.getElementById('recordButton');
-    const stopButton = document.getElementById('stopButton');
-    const playButton = document.getElementById('playButton');
-
-    recordButton.disabled = recording || playing;
-    stopButton.disabled = !recording && !playing;
-    playButton.disabled = recording || isPlaying;
-
-    recordButton.querySelector('.text').textContent = recording ? 'Recording...' : 'Record';
-    playButton.querySelector('.text').textContent = playing ? 'Playing...' : 'Play';
-}
-
-function startVisualization() {
-    let bars = 30;
-    visualizer.innerHTML = '';
-    for (let i = 0; i < bars; i++) {
-        let bar = document.createElement('div');
-        bar.style.width = (100 / bars) + '%';
-        bar.style.height = '100%';
-        bar.style.display = 'inline-block';
-        bar.style.background = 'rgba(255, 255, 255, 0.5)';
-        visualizer.appendChild(bar);
+    function updateTimer() {
+        const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+        const minutes = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
+        const seconds = (elapsedTime % 60).toString().padStart(2, '0');
+        timerDiv.textContent = `${minutes}:${seconds}`;
     }
-    animateVisualizer();
-}
 
-function animateVisualizer() {
-    if (!isRecording) return;
-    const bars = visualizer.children;
-    for (let bar of bars) {
-        let height = Math.random() * 100;
-        bar.style.height = height + '%';
+    function updateVisualizer() {
+        const bars = 20;
+        visualizer.innerHTML = '';
+        for (let i = 0; i < bars; i++) {
+            const bar = document.createElement('div');
+            bar.style.width = `${100 / bars}%`;
+            bar.style.height = `${Math.random() * 100}%`;
+            bar.style.backgroundColor = '#ffffff';
+            bar.style.opacity = '0.7';
+            bar.style.display = 'inline-block';
+            visualizer.appendChild(bar);
+        }
     }
-    requestAnimationFrame(animateVisualizer);
-}
-
-function stopVisualization() {
-    visualizer.innerHTML = '';
 }
