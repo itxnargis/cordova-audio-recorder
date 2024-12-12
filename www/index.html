@@ -1,15 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
-    <title>Audio Recorder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Sleek Audio Recorder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
-    <button id="recordButton">Record</button>
-    <button id="stopButton">Stop</button>
-    <button id="playButton">Play</button>
+    <div class="container">
+        <h1>Sleek Audio Recorder</h1>
+        <div class="recorder">
+            <div class="visualizer" id="visualizer"></div>
+            <div class="controls">
+                <button id="recordButton" class="btn record">
+                    <span class="icon">🎙️</span>
+                    <span class="text">Record</span>
+                </button>
+                <button id="stopButton" class="btn stop" disabled>
+                    <span class="icon">⏹️</span>
+                    <span class="text">Stop</span>
+                </button>
+                <button id="playButton" class="btn play" disabled>
+                    <span class="icon">▶️</span>
+                    <span class="text">Play</span>
+                </button>
+            </div>
+        </div>
+    </div>
     <script src="cordova.js"></script>
     <script src="js/index.js"></script>
 </body>
 </html>
+
