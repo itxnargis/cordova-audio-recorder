@@ -30,6 +30,5 @@
     <!-- Plugins -->
     <plugin name="cordova-plugin-media" />
     <plugin name="cordova-plugin-file" />
-    <plugin name="cordova.plugins.diagnostic" />
 
 </widget>

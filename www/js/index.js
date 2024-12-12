@@ -25,30 +25,31 @@ function toggleRecording() {
 }
 
 function startRecording() {
-    cordova.plugins.diagnostic.requestRuntimePermissions(function(statuses) {
-        if (statuses["android.permission.RECORD_AUDIO"] === cordova.plugins.diagnostic.permissionStatus.GRANTED &&
-            statuses["android.permission.WRITE_EXTERNAL_STORAGE"] === cordova.plugins.diagnostic.permissionStatus.GRANTED) {
+    if (!Media) {
+        console.error("Media plugin is not available.");
+        return;
+    }
 
-            const path = cordova.file.externalDataDirectory + audioFile;
-            mediaRec = new Media(path,
-                () => console.log("Recording successful"),
-                (err) => console.error("Recording failed: " + err.code)
-            );
-            mediaRec.startRecord();
-            isRecording = true;
-            updateUI(true);
-            startVisualization();
+    const audioFile = "myRecording.mp3"; // Example file name
+    const path = cordova.file.externalDataDirectory + audioFile;
 
-        } else {
-            console.error("Permissions not granted for recording.");
-        }
-    }, function(error) {
-        console.error("Permission request error: " + error);
-    }, [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
-    ]);
+    try {
+        const mediaRec = new Media(
+            path,
+            () => console.log("Recording successful"),
+            (err) => console.error("Recording failed: " + err.code)
+        );
+
+        mediaRec.startRecord();
+        isRecording = true;
+        updateUI(true);
+        startVisualization();
+
+    } catch (error) {
+        console.error("Error initializing recording: " + error.message);
+    }
 }
+
 
 function stopRecording() {
     if (mediaRec) {
